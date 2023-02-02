@@ -7,7 +7,6 @@ public static class Astar
 
     public struct Node
     {
-        public float Cost;
         public IntVector2 GridPos;
         public Vector3 WorldPos;
         public Enums.NavigationState NavigationState;
@@ -15,13 +14,13 @@ public static class Astar
 
     public struct IntVector2
     {
-        public int X;
-        public int Y;
+        public readonly int X;
+        public readonly int Y;
 
-        public IntVector2(int pCoordX, int pCoordY)
+        public IntVector2(int coordX, int coordY)
         {
-            X = pCoordX;
-            Y = pCoordY;
+            X = coordX;
+            Y = coordY;
         }
     }
 
@@ -36,164 +35,157 @@ public static class Astar
 
     #region Logic
 
-    public static List<Node> FindPath(Node p_start, Node p_end)
+    public static List<Node> FindPath(Node startNode, Node endNode)
     {
-        List<Node> l_closedSet = new List<Node>();
+        var closedSet = new List<Node>();
+        var openSet = new List<Node>();
+        var fromList = new Dictionary<Node, Node>();
+        var gScores = new Dictionary<Node, float>();
+        var hScores = new Dictionary<Node, float>();
+        var fScores = new Dictionary<Node, float>();
+        
+        openSet.Add(startNode);
+        gScores[startNode] = 0.0f;
+        hScores[startNode] = GetCost(startNode, endNode);
+        fScores[startNode] = hScores[startNode];
 
-        List<Node> l_openSet = new List<Node>();
-        l_openSet.Add(p_start);
-
-        Dictionary<Node, Node> l_fromList = new Dictionary<Node, Node>();
-
-        Dictionary<Node, float> g_scores = new Dictionary<Node, float>();
-        g_scores[p_start] = 0.0f;
-
-        Dictionary<Node, float> h_scores = new Dictionary<Node, float>();
-        h_scores[p_start] = GetCost(p_start, p_end);
-
-        Dictionary<Node, float> f_scores = new Dictionary<Node, float>();
-        f_scores[p_start] = h_scores[p_start];
-
-        while (l_openSet.Count != 0)
+        while (openSet.Count != 0)
         {
-            Node l_currentNode = LowestScore(l_openSet, f_scores);
+            Node currentNode = LowestScore(openSet, fScores);
 
-            if (l_currentNode.Equals(p_end))
+            if (currentNode.Equals(endNode))
             {
-                List<Node> l_result = new List<Node>();
-                ReconstructPath(l_fromList, l_currentNode, ref l_result);
-                return l_result;
+                List<Node> finalPath = new List<Node>();
+                ReconstructPath(fromList, currentNode, ref finalPath);
+                return finalPath;
             }
 
-            l_openSet.Remove(l_currentNode);
-            l_closedSet.Add(l_currentNode);
+            openSet.Remove(currentNode);
+            closedSet.Add(currentNode);
 
-            List<Node> l_neighbours = GetNodeNeighbours(l_currentNode);
+            List<Node> neighbours = GetNeighbourNodes(currentNode);
 
-            foreach (Node neighbour in l_neighbours)
+            foreach (Node neighbour in neighbours)
             {
-                if (neighbour.NavigationState == Enums.NavigationState.Unwalkable || l_closedSet.Contains(neighbour))
+                if (neighbour.NavigationState == Enums.NavigationState.Unwalkable || closedSet.Contains(neighbour))
                 {
                     continue;
                 }
 
-                float l_tentativeGScore = g_scores[l_currentNode] + GetCost(l_currentNode, neighbour);
-                bool l_tentativeIsBetter = false;
+                float tentativeGScore = gScores[currentNode] + GetCost(currentNode, neighbour);
+                bool tentativeIsBetter = false;
                 
-                if (!l_openSet.Contains(neighbour))
+                if (!openSet.Contains(neighbour))
                 {
-                    l_openSet.Add(neighbour);
-                    l_tentativeIsBetter = true;
+                    openSet.Add(neighbour);
+                    tentativeIsBetter = true;
                 }
-                else if (l_tentativeGScore < g_scores[neighbour])
-                {
-                    l_tentativeIsBetter = true;
-                }
+                else if (tentativeGScore < gScores[neighbour])
+                    tentativeIsBetter = true;
 
-                if (l_tentativeIsBetter)
-                {
-                    l_fromList[neighbour] = l_currentNode;
-                    g_scores[neighbour] = l_tentativeGScore;
-                    h_scores[neighbour] = GetCost(neighbour, p_end);
-                    f_scores[neighbour] = g_scores[neighbour] + h_scores[neighbour];
-                }
+                if (!tentativeIsBetter)
+                    continue;
+                
+                fromList[neighbour] = currentNode;
+                gScores[neighbour] = tentativeGScore;
+                hScores[neighbour] = GetCost(neighbour, endNode);
+                fScores[neighbour] = gScores[neighbour] + hScores[neighbour];
             }
         }
 
         return new List<Node>();
     }
 
-    public static List<Node> GetNodeNeighbours(Node pNode)
+    private static List<Node> GetNeighbourNodes(Node currentNode)
     {
-        List<Node> lNeighboursList = new List<Node>();
+        var neighbours = new List<Node>();
 
-        int X = pNode.GridPos.X;
-        int Y = pNode.GridPos.Y;
+        var coordX = currentNode.GridPos.X;
+        var coordY = currentNode.GridPos.Y;
+        Node node;
 
-        Node l_node;
-
-        // Top
-        if (GetNodeAtCoords(X, Y - 1, out l_node))
-            lNeighboursList.Add(l_node);
-        // Down
-        if (GetNodeAtCoords(X, Y + 1, out l_node))
-            lNeighboursList.Add(l_node);
-        // Left
-        if (GetNodeAtCoords(X - 1, Y, out l_node))
-            lNeighboursList.Add(l_node);
-        // Right
-        if (GetNodeAtCoords(X + 1, Y, out l_node))
-            lNeighboursList.Add(l_node);
+        // 🡩
+        if (GetNodeAtCoords(coordX, coordY + 1, out node))
+            neighbours.Add(node);
+        // 🡪
+        if (GetNodeAtCoords(coordX + 1, coordY, out node))
+            neighbours.Add(node);
+        // 🡫
+        if (GetNodeAtCoords(coordX, coordY - 1, out node))
+            neighbours.Add(node);
+        // 🡨
+        if (GetNodeAtCoords(coordX - 1, coordY, out node))
+            neighbours.Add(node);
 
         // Diagonals
-        if (AllowDiagonals)
-        {
-            if (GetNodeAtCoords(X - 1, Y - 1, out l_node))
-                lNeighboursList.Add(l_node);
-            if (GetNodeAtCoords(X + 1, Y - 1, out l_node))
-                lNeighboursList.Add(l_node);
-            if (GetNodeAtCoords(X - 1, Y + 1, out l_node))
-                lNeighboursList.Add(l_node);
-            if (GetNodeAtCoords(X + 1, Y + 1, out l_node))
-                lNeighboursList.Add(l_node);
-        }
+        if (!AllowDiagonals)
+            return neighbours;
+        
+        // 🡭
+        if (GetNodeAtCoords(coordX + 1, coordY + 1, out node))
+            neighbours.Add(node);
+        // 🡮
+        if (GetNodeAtCoords(coordX + 1, coordY - 1, out node))
+            neighbours.Add(node);
+        // 🡯
+        if (GetNodeAtCoords(coordX - 1, coordY - 1, out node))
+            neighbours.Add(node);
+        // 🡬
+        if (GetNodeAtCoords(coordX - 1, coordY + 1, out node))
+            neighbours.Add(node);
 
-        return lNeighboursList;
+        return neighbours;
     }
     
-    private static bool GetNodeAtCoords(int pCoordX, int pCoordY, out Node pNode)
+    private static bool GetNodeAtCoords(int coordX, int coordY, out Node outputNode)
     {
-        if (CoordsAreValid(pCoordX, pCoordY))
+        if (CoordsAreValid(coordX, coordY))
         {
-            //pNode = Nodes[pCoordX, pCoordY];
-            pNode = Nodes[pCoordY, pCoordX];
+            outputNode = Nodes[coordY, coordX];
             return true;
         }
 
-        pNode = default;
+        outputNode = default;
         return false;
     }
 
-    private static bool CoordsAreValid(int p_coordX, int p_coordY)
+    private static bool CoordsAreValid(int coordX, int coordY)
     {
-        return (p_coordY >= 0 && p_coordY < Nodes.GetLength(0)) && (p_coordX >= 0 && p_coordX < Nodes.GetLength(1));
+        return ((coordY >= 0) && (coordY < Nodes.GetLength(0))) && ((coordX >= 0) && (coordX < Nodes.GetLength(1)));
     }
 
-    private static float GetCost(Node pFrom, Node pTo)
+    private static float GetCost(Node fromNode, Node toNode)
     {
-        float l_rawDistance = Vector3.Distance(pFrom.WorldPos, pTo.WorldPos);
-        float l_distance = l_rawDistance + pTo.Cost;
-        return l_distance;
+        return Vector3.Distance(fromNode.WorldPos, toNode.WorldPos);
     }
 
-    private static void ReconstructPath(Dictionary<Node, Node> pFromList, Node pCurrentNode, ref List<Node> pResult)
+    private static void ReconstructPath(Dictionary<Node, Node> fromList, Node currentNode, ref List<Node> finalPath)
     {
-        if (pFromList.ContainsKey(pCurrentNode))
+        if (fromList.ContainsKey(currentNode))
         {
-            pResult.Add(pCurrentNode);
-            ReconstructPath(pFromList, pFromList[pCurrentNode], ref pResult);
+            finalPath.Add(currentNode);
+            ReconstructPath(fromList, fromList[currentNode], ref finalPath);
         }
 
         // This is the start node
-        pResult.Add(pCurrentNode);
+        finalPath.Add(currentNode);
     }
 
-    private static Node LowestScore(List<Node> p_nodes, Dictionary<Node, float> p_scores)
+    private static Node LowestScore(List<Node> nodes, Dictionary<Node, float> scores)
     {
-        int l_index = 0;
-        float l_lowestScore = float.MaxValue;
+        var index = 0;
+        var lowestScore = float.MaxValue;
 
-        for (int i = 0; i < p_nodes.Count; i++)
+        for (var i = 0; i < nodes.Count; i++)
         {
-            if (p_scores[p_nodes[i]] > l_lowestScore)
-            {
+            if (scores[nodes[i]] > lowestScore)
                 continue;
-            }
-            l_index = i;
-            l_lowestScore = p_scores[p_nodes[i]];
+            
+            index = i;
+            lowestScore = scores[nodes[i]];
         }
 
-        return p_nodes[l_index];
+        return nodes[index];
     }
 
     #endregion
