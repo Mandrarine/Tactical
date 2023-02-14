@@ -1,132 +1,185 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 
 public class GridController : MonoBehaviour
 {
-    public class Tile
-    {
-        public GameObject Go;
-        public Astar.Node Node;
-    }
+	#region Members
 
-    [SerializeField] private AstarContext _astarContext;
-    [SerializeField] private TargetFollow _targetFollow;
-    [SerializeField] private GameObject _tileSelector;
-    
-    private Tile[,] tiles;
-    private Tile currentTile;
-    
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.I))
-            InitGrid();
-        
-        if (Input.GetKeyDown(KeyCode.UpArrow))
-            NavigateToDirection(0, 1);
-        else if (Input.GetKeyDown(KeyCode.RightArrow))
-            NavigateToDirection(1, 0);
-        else if (Input.GetKeyDown(KeyCode.DownArrow))
-            NavigateToDirection(0, -1);
-        else if (Input.GetKeyDown(KeyCode.LeftArrow))
-            NavigateToDirection(-1, 0);
-    }
-    
-    private void InitGrid()
-    {
-        tiles = new Tile[_astarContext.GridHeight, _astarContext.GridWidth];
-        Astar.Nodes = new Astar.Node[_astarContext.GridHeight, _astarContext.GridWidth];
+	public static GridController Instance;
 
-        for (var y = 0; y < tiles.GetLength(0); y++)
-        {
-            for (var x = 0; x < tiles.GetLength(1); x++)
-            {
-                SamplePosition(x, y);
-            }
-        }
+	[SerializeField] private AstarContext _astarContext;
+	[SerializeField] private TargetFollow _targetFollow;
+	[SerializeField] private GameObject _tileSelector;
 
-        SelectTileAtCoords(0, 0);
-    }
+	//public Unit unit;
 
-    private void SamplePosition(int indexX, int indexY)
-    {
-        var position = transform.position;
-        var posX = position.x + (indexX * _astarContext.NodeSize.x);
-        var posY = position.z + (indexY * _astarContext.NodeSize.y);
+	public Tile[,] Tiles => _tiles;
 
-        var lRayOrigin = new Vector3(posX, _astarContext.SamplingHeight, posY);
-        var lRay = new Ray(lRayOrigin, Vector3.down);
+	private Tile[,] _tiles;
+	private Tile _currentTile;
 
-        if (!Physics.Raycast(lRay, out RaycastHit hit, _astarContext.SamplingHeight + 1))
-            return;
-        
-        var newNode = new Astar.Node
-        {
-            GridPos = new Astar.IntVector2(indexX, indexY),
-            WorldPos = new Vector3(hit.point.x, 0, hit.point.z)
-        };
-        
-        var newTile = new Tile
-        {
-            Go = hit.collider.gameObject,
-            Node = newNode
-        };
+	#endregion
 
-        switch (hit.collider.tag)
-        {
-            case "Ground":
-                newNode.NavigationState = Enums.NavigationState.Walkable;
-                break;
-            /*
+	#region Unity
+
+	private void Awake()
+	{
+		Instance = this;
+	}
+
+	private void Start()
+	{
+		InitGrid();
+	}
+
+	private void Update()
+	{
+		if (Input.GetKeyDown(KeyCode.UpArrow))
+			NavigateToDirection(1, 0, true);
+		else if (Input.GetKeyDown(KeyCode.RightArrow))
+			NavigateToDirection(0, -1, true);
+		else if (Input.GetKeyDown(KeyCode.DownArrow))
+			NavigateToDirection(-1, 0, true);
+		else if (Input.GetKeyDown(KeyCode.LeftArrow))
+			NavigateToDirection(0, 1, true);
+	}
+
+	#endregion
+
+	#region Logic
+
+	private void InitGrid()
+	{
+		_tiles = new Tile[_astarContext.GridHeight, _astarContext.GridWidth];
+		Astar.Nodes = new Astar.Node[_astarContext.GridHeight, _astarContext.GridWidth];
+
+		for (var y = 0; y < _tiles.GetLength(0); y++)
+		{
+			for (var x = 0; x < _tiles.GetLength(1); x++)
+			{
+				SampleGridAtCoords(x, y);
+			}
+		}
+
+		SelectTileAtCoords(1, 0);
+		//_tiles[1, 1].Unit = unit;
+	}
+
+	private void SampleGridAtCoords(int indexX, int indexY)
+	{
+		var position = transform.position;
+		var posX = position.x + (indexX * _astarContext.NodeSize.x);
+		var posY = position.z + (indexY * _astarContext.NodeSize.y);
+
+		var lRayOrigin = new Vector3(posX, _astarContext.SamplingHeight, posY);
+		var lRay = new Ray(lRayOrigin, Vector3.down);
+
+		if (!Physics.Raycast(lRay, out RaycastHit hit, _astarContext.SamplingHeight + 1))
+			return;
+
+		var newNode = new Astar.Node
+		{
+			GridPos = new Astar.IntVector2(indexX, indexY),
+			WorldPos = new Vector3(hit.point.x, 0, hit.point.z)
+		};
+
+		/*
+		switch (hit.collider.tag)
+		{
+			case "Ground":
+				newNode.NavigationState = Enums.NavigationState.Walkable;
+				break;
             case "Start":
-                _startNode = newNode;
+                _astarContext.StartNode = newNode;
                 newNode.NavigationState = Enums.NavigationState.Walkable;
                 break;
             case "End":
-                _endNode = newNode;
-                newNode.NavigationState = Enums.NavigationState.Walkable;
+				_astarContext.EndNode = newNode;
+				newNode.NavigationState = Enums.NavigationState.Walkable;
                 break;
-            */
-            default:
-                newNode.NavigationState = Enums.NavigationState.Unwalkable;
-                break;
-        }
+			default:
+				newNode.NavigationState = Enums.NavigationState.Unwalkable;
+				break;
+		}
+		*/
 
-        tiles[indexY, indexX] = newTile;
-        Astar.Nodes[indexY, indexX] = newNode;
-    }
+		Astar.Nodes[indexY, indexX] = newNode;
 
-    private void SelectTileAtCoords(int coordX, int coordY)
-    {
-        currentTile = tiles[coordY, coordX];
-        _targetFollow.Target = currentTile.Go.transform;
-        _tileSelector.transform.position = currentTile.Go.transform.position + (Vector3.up * 0.01f);
-    }
+		var newTile = new Tile
+		{
+			Go = hit.collider.gameObject,
+			Node = newNode
+		};
 
-    private void NavigateToDirection(int dirX, int dirY)
-    {
-        int coordX = currentTile.Node.GridPos.X + dirX;
-        int coordY = currentTile.Node.GridPos.Y + dirY;
-        
-        if (GetTileAtCoords(coordX, coordY, out Tile tile))
-            SelectTileAtCoords(coordX, coordY);
-    }
-    
-    private bool GetTileAtCoords(int coordX, int coordY, out Tile outputTile)
-    {
-        if (CoordsAreValid(coordX, coordY))
-        {
-            outputTile = tiles[coordY, coordX];
-            return true;
-        }
+		_tiles[indexY, indexX] = newTile;
+	}
 
-        outputTile = default;
-        return false;
-    }
+	private void SelectTileAtCoords(int coordX, int coordY)
+	{
+		_currentTile = _tiles[coordY, coordX];
+		//_targetFollow.Target = currentTile.Go.transform;
+		_tileSelector.transform.position = _currentTile.Go.transform.position + (Vector3.up * 0.01f);
+	}
 
-    private bool CoordsAreValid(int coordX, int coordY)
-    {
-        return ((coordY >= 0) && (coordY < tiles.GetLength(0))) && ((coordX >= 0) && (coordX < tiles.GetLength(1)));
-    }
+	private void NavigateToDirection(int dirX, int dirY, bool deepSearch)
+	{
+		int coordX = _currentTile.Node.GridPos.X;
+		int coordY = _currentTile.Node.GridPos.Y;
+		Tile tile = default;
+
+		do
+		{
+			coordX += dirX;
+			coordY += dirY;
+
+			TryGetTileAtCoords(coordX, coordY, out tile);
+
+			if (tile != null)
+				SelectTileAtCoords(coordX, coordY);
+		}
+		while (deepSearch && (tile == null) && CoordsAreValid(coordX, coordY));
+	}
+
+	private bool TryGetTileAtCoords(int coordX, int coordY, out Tile tile)
+	{
+		tile = default;
+
+		if (CoordsAreValid(coordX, coordY))
+		{
+			tile = _tiles[coordY, coordX];
+			return true;
+		}
+
+		return false;
+	}
+
+	private bool CoordsAreValid(int coordX, int coordY)
+	{
+		return ((coordY >= 0) && (coordY < _tiles.GetLength(0))) && ((coordX >= 0) && (coordX < _tiles.GetLength(1)));
+	}
+
+	#endregion
+
+	#region Gizmos
+
+	private void OnDrawGizmos()
+	{
+		if (Tiles == null)
+			return;
+
+		foreach (Tile tile in Tiles)
+		{
+			if (tile == null)
+				continue;
+
+			DrawGizmoSphere(tile.Node, 0.1f, Color.white);
+		}
+	}
+
+	private void DrawGizmoSphere(Astar.Node node, float radius, Color color)
+	{
+		Gizmos.color = color;
+		Gizmos.DrawSphere(node.WorldPos, radius);
+	}
+
+	#endregion
 }

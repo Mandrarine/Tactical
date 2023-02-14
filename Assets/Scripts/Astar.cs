@@ -3,190 +3,190 @@ using UnityEngine;
 
 public static class Astar
 {
-    #region Structures
+	#region Structures
 
-    public struct Node
-    {
-        public IntVector2 GridPos;
-        public Vector3 WorldPos;
-        public Enums.NavigationState NavigationState;
-    }
+	public struct Node
+	{
+		public IntVector2 GridPos;
+		public Vector3 WorldPos;
+		//public Enums.NavigationState NavigationState;
+	}
 
-    public struct IntVector2
-    {
-        public readonly int X;
-        public readonly int Y;
+	public struct IntVector2
+	{
+		public readonly int X;
+		public readonly int Y;
 
-        public IntVector2(int coordX, int coordY)
-        {
-            X = coordX;
-            Y = coordY;
-        }
-    }
+		public IntVector2(int coordX, int coordY)
+		{
+			X = coordX;
+			Y = coordY;
+		}
+	}
 
-    #endregion
+	#endregion
 
-    #region Attributes
+	#region Members
 
-    public static Node[,] Nodes { get; set; }
-    public static bool AllowDiagonals { get; set; }
+	public static Node[,] Nodes { get; set; }
+	public static bool AllowDiagonals { get; set; }
 
-    #endregion
+	#endregion
 
-    #region Logic
+	#region Logic
 
-    public static List<Node> FindPath(Node startNode, Node endNode)
-    {
-        var closedSet = new List<Node>();
-        var openSet = new List<Node>();
-        var fromList = new Dictionary<Node, Node>();
-        var gScores = new Dictionary<Node, float>();
-        var hScores = new Dictionary<Node, float>();
-        var fScores = new Dictionary<Node, float>();
-        
-        openSet.Add(startNode);
-        gScores[startNode] = 0.0f;
-        hScores[startNode] = GetCost(startNode, endNode);
-        fScores[startNode] = hScores[startNode];
+	public static List<Node> FindPath(Node startNode, Node endNode)
+	{
+		var closedSet = new List<Node>();
+		var openSet = new List<Node>();
+		var fromList = new Dictionary<Node, Node>();
+		var gScores = new Dictionary<Node, float>();
+		var hScores = new Dictionary<Node, float>();
+		var fScores = new Dictionary<Node, float>();
 
-        while (openSet.Count != 0)
-        {
-            Node currentNode = LowestScore(openSet, fScores);
+		openSet.Add(startNode);
+		gScores[startNode] = 0.0f;
+		hScores[startNode] = GetCost(startNode, endNode);
+		fScores[startNode] = hScores[startNode];
 
-            if (currentNode.Equals(endNode))
-            {
-                List<Node> finalPath = new List<Node>();
-                ReconstructPath(fromList, currentNode, ref finalPath);
-                return finalPath;
-            }
+		while (openSet.Count != 0)
+		{
+			Node currentNode = LowestScore(openSet, fScores);
 
-            openSet.Remove(currentNode);
-            closedSet.Add(currentNode);
+			if (currentNode.Equals(endNode))
+			{
+				List<Node> finalPath = new List<Node>();
+				ReconstructPath(fromList, currentNode, ref finalPath);
+				return finalPath;
+			}
 
-            List<Node> neighbours = GetNeighbourNodes(currentNode);
+			openSet.Remove(currentNode);
+			closedSet.Add(currentNode);
 
-            foreach (Node neighbour in neighbours)
-            {
-                if (neighbour.NavigationState == Enums.NavigationState.Unwalkable || closedSet.Contains(neighbour))
-                {
-                    continue;
-                }
+			List<Node> neighbours = GetNeighbourNodes(currentNode);
 
-                float tentativeGScore = gScores[currentNode] + GetCost(currentNode, neighbour);
-                bool tentativeIsBetter = false;
-                
-                if (!openSet.Contains(neighbour))
-                {
-                    openSet.Add(neighbour);
-                    tentativeIsBetter = true;
-                }
-                else if (tentativeGScore < gScores[neighbour])
-                    tentativeIsBetter = true;
+			foreach (Node neighbour in neighbours)
+			{
+				//if (neighbour.NavigationState == Enums.NavigationState.Unwalkable || closedSet.Contains(neighbour))
+				if (closedSet.Contains(neighbour))
+				{
+					continue;
+				}
 
-                if (!tentativeIsBetter)
-                    continue;
-                
-                fromList[neighbour] = currentNode;
-                gScores[neighbour] = tentativeGScore;
-                hScores[neighbour] = GetCost(neighbour, endNode);
-                fScores[neighbour] = gScores[neighbour] + hScores[neighbour];
-            }
-        }
+				float tentativeGScore = gScores[currentNode] + GetCost(currentNode, neighbour);
+				bool tentativeIsBetter = false;
 
-        return new List<Node>();
-    }
+				if (!openSet.Contains(neighbour))
+				{
+					openSet.Add(neighbour);
+					tentativeIsBetter = true;
+				}
+				else if (tentativeGScore < gScores[neighbour])
+					tentativeIsBetter = true;
 
-    private static List<Node> GetNeighbourNodes(Node currentNode)
-    {
-        var neighbours = new List<Node>();
+				if (!tentativeIsBetter)
+					continue;
 
-        var coordX = currentNode.GridPos.X;
-        var coordY = currentNode.GridPos.Y;
-        Node node;
+				fromList[neighbour] = currentNode;
+				gScores[neighbour] = tentativeGScore;
+				hScores[neighbour] = GetCost(neighbour, endNode);
+				fScores[neighbour] = gScores[neighbour] + hScores[neighbour];
+			}
+		}
 
-        // 🡩
-        if (GetNodeAtCoords(coordX, coordY + 1, out node))
-            neighbours.Add(node);
-        // 🡪
-        if (GetNodeAtCoords(coordX + 1, coordY, out node))
-            neighbours.Add(node);
-        // 🡫
-        if (GetNodeAtCoords(coordX, coordY - 1, out node))
-            neighbours.Add(node);
-        // 🡨
-        if (GetNodeAtCoords(coordX - 1, coordY, out node))
-            neighbours.Add(node);
+		return new List<Node>();
+	}
 
-        // Diagonals
-        if (!AllowDiagonals)
-            return neighbours;
-        
-        // 🡭
-        if (GetNodeAtCoords(coordX + 1, coordY + 1, out node))
-            neighbours.Add(node);
-        // 🡮
-        if (GetNodeAtCoords(coordX + 1, coordY - 1, out node))
-            neighbours.Add(node);
-        // 🡯
-        if (GetNodeAtCoords(coordX - 1, coordY - 1, out node))
-            neighbours.Add(node);
-        // 🡬
-        if (GetNodeAtCoords(coordX - 1, coordY + 1, out node))
-            neighbours.Add(node);
+	private static List<Node> GetNeighbourNodes(Node currentNode)
+	{
+		var neighbours = new List<Node>();
 
-        return neighbours;
-    }
-    
-    private static bool GetNodeAtCoords(int coordX, int coordY, out Node outputNode)
-    {
-        if (CoordsAreValid(coordX, coordY))
-        {
-            outputNode = Nodes[coordY, coordX];
-            return true;
-        }
+		var coordX = currentNode.GridPos.X;
+		var coordY = currentNode.GridPos.Y;
+		Node node;
 
-        outputNode = default;
-        return false;
-    }
+		// 🡩
+		if (TryGetNodeAtCoords(coordX, coordY + 1, out node))
+			neighbours.Add(node);
+		// 🡪
+		if (TryGetNodeAtCoords(coordX + 1, coordY, out node))
+			neighbours.Add(node);
+		// 🡫
+		if (TryGetNodeAtCoords(coordX, coordY - 1, out node))
+			neighbours.Add(node);
+		// 🡨
+		if (TryGetNodeAtCoords(coordX - 1, coordY, out node))
+			neighbours.Add(node);
 
-    private static bool CoordsAreValid(int coordX, int coordY)
-    {
-        return ((coordY >= 0) && (coordY < Nodes.GetLength(0))) && ((coordX >= 0) && (coordX < Nodes.GetLength(1)));
-    }
+		// Diagonals
+		if (!AllowDiagonals)
+			return neighbours;
 
-    private static float GetCost(Node fromNode, Node toNode)
-    {
-        return Vector3.Distance(fromNode.WorldPos, toNode.WorldPos);
-    }
+		// 🡭
+		if (TryGetNodeAtCoords(coordX + 1, coordY + 1, out node))
+			neighbours.Add(node);
+		// 🡮
+		if (TryGetNodeAtCoords(coordX + 1, coordY - 1, out node))
+			neighbours.Add(node);
+		// 🡯
+		if (TryGetNodeAtCoords(coordX - 1, coordY - 1, out node))
+			neighbours.Add(node);
+		// 🡬
+		if (TryGetNodeAtCoords(coordX - 1, coordY + 1, out node))
+			neighbours.Add(node);
 
-    private static void ReconstructPath(Dictionary<Node, Node> fromList, Node currentNode, ref List<Node> finalPath)
-    {
+		return neighbours;
+	}
+
+	private static bool TryGetNodeAtCoords(int coordX, int coordY, out Node outputNode)
+	{
+		if (CoordsAreValid(coordX, coordY))
+		{
+			outputNode = Nodes[coordY, coordX];
+			return true;
+		}
+
+		outputNode = default;
+		return false;
+	}
+
+	private static bool CoordsAreValid(int coordX, int coordY)
+	{
+		return ((coordY >= 0) && (coordY < Nodes.GetLength(0))) && ((coordX >= 0) && (coordX < Nodes.GetLength(1)));
+	}
+
+	private static float GetCost(Node fromNode, Node toNode)
+	{
+		return Vector3.Distance(fromNode.WorldPos, toNode.WorldPos);
+	}
+
+	private static void ReconstructPath(Dictionary<Node, Node> fromList, Node currentNode, ref List<Node> finalPath)
+	{
         if (fromList.ContainsKey(currentNode))
         {
             finalPath.Add(currentNode);
             ReconstructPath(fromList, fromList[currentNode], ref finalPath);
         }
-
-        // This is the start node
-        finalPath.Add(currentNode);
+        else
+            finalPath.Add(currentNode);
     }
 
     private static Node LowestScore(List<Node> nodes, Dictionary<Node, float> scores)
-    {
-        var index = 0;
-        var lowestScore = float.MaxValue;
+	{
+		var index = 0;
+		var lowestScore = float.MaxValue;
 
-        for (var i = 0; i < nodes.Count; i++)
-        {
-            if (scores[nodes[i]] > lowestScore)
-                continue;
-            
-            index = i;
-            lowestScore = scores[nodes[i]];
-        }
+		for (var i = 0; i < nodes.Count; i++)
+		{
+			if (scores[nodes[i]] > lowestScore)
+				continue;
 
-        return nodes[index];
-    }
+			index = i;
+			lowestScore = scores[nodes[i]];
+		}
 
-    #endregion
+		return nodes[index];
+	}
+
+	#endregion
 }

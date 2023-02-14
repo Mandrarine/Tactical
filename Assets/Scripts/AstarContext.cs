@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using UnityEngine;
 
 public class AstarContext : MonoBehaviour
 {
-    #region Attributes
+    #region Members
 
     public static AstarContext Instance;
     
@@ -17,14 +16,8 @@ public class AstarContext : MonoBehaviour
     [SerializeField] private bool _drawGizmos = true;
     [SerializeField, Range(0.0f, 0.5f)] private float _gizmosRadius = 0.1f;
 
-    private Astar.Node _startNode;
-    private Astar.Node _endNode;
-    private List<Astar.Node> _path = new();
-
-    #endregion
-
-    #region Properties
-
+    //public Astar.Node StartNode { get; set; }
+    //public Astar.Node EndNode { get; set; }
     public int GridWidth => _gridWidth;
     public int GridHeight => _gridHeight;
     public Vector2 NodeSize => _nodeSize;
@@ -32,52 +25,40 @@ public class AstarContext : MonoBehaviour
 
     #endregion
 
-    #region Unity Callbacks
+    #region Unity
 
-    private void OnDisable()
+    private void OnEnable()
     {
         Astar.Nodes = null;
-        _path = null;
-    }    
+    }
 
-    #endregion
-
-    #region Initialization
-
-    void Awake()
+    private void Awake()
     {
         Instance = this;
     }
 
-    #endregion
-
-    #region Updates
-
-    void Update()
+    private void OnDisable()
     {
-        if (Input.GetKeyDown(KeyCode.F))
-        {
-            _path = FindPath(_startNode, _endNode);
-        }
-        else if (Input.GetKeyDown(KeyCode.C))
-        {
-            Astar.Nodes = null;
-            _path = null;
-        }
+        Astar.Nodes = null;
     }
 
     #endregion
 
     #region Logic
 
-    public List<Astar.Node> FindPath(Astar.Node startNode, Astar.Node endNode)
+    public List<Astar.Node> FindPath(Tile startTile, Tile endTile)
     {
+        //StartNode = startTile.Node;
+        //EndNode = endTile.Node;
+
         Astar.AllowDiagonals = _allowDiagonals;
-        return Astar.FindPath(_startNode, _endNode);
+
+        return Astar.FindPath(startTile.Node, endTile.Node);
     }
 
     #endregion
 
+    /*
     #region Gizmos
 
     private void OnDrawGizmos()
@@ -87,18 +68,11 @@ public class AstarContext : MonoBehaviour
 
         foreach (Astar.Node node in Astar.Nodes)
         {
-            if (node.NavigationState == Enums.NavigationState.Walkable)
-                DrawGizmoSphere(node, _gizmosRadius, Color.white);
-            else
-                DrawGizmoSphere(node, _gizmosRadius, Color.red);
-        }
-
-        if (_path == null || _path.Count <= 1)
-            return;
-
-        foreach (var item in _path)
-        {
-            DrawGizmoSphere(item, _gizmosRadius, Color.green);
+            //if (node.NavigationState == Enums.NavigationState.Walkable)
+            //    DrawGizmoSphere(node, _gizmosRadius, Color.white);
+            //else
+            //    DrawGizmoSphere(node, _gizmosRadius, Color.red);
+            DrawGizmoSphere(node, _gizmosRadius, Color.white);
         }
     }
 
@@ -109,4 +83,5 @@ public class AstarContext : MonoBehaviour
     }
 
     #endregion
+*/
 }
