@@ -1,6 +1,6 @@
 public class Enums
 {
-    public enum NavigationState
+    public enum NavState
     {
         Walkable,
         Unwalkable

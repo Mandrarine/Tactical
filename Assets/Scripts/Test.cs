@@ -3,6 +3,8 @@ using UnityEngine;
 
 public class Test : MonoBehaviour
 {
+	#region Fields
+
 	public GameObject start;
 	public GameObject end;
 	public Unit unit;
@@ -11,7 +13,9 @@ public class Test : MonoBehaviour
 	private Tile _endTile;
 	private List<Astar.Node> _path;
 
-	#region Updates
+	#endregion
+
+	#region Unity
 
 	private void Update()
 	{
@@ -28,7 +32,7 @@ public class Test : MonoBehaviour
 
 	#endregion
 
-	#region Logic
+	#region Methods
 
 	#endregion
 

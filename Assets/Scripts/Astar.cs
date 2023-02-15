@@ -9,7 +9,7 @@ public static class Astar
 	{
 		public IntVector2 GridPos;
 		public Vector3 WorldPos;
-		//public Enums.NavigationState NavigationState;
+		public Enums.NavState NavState;
 	}
 
 	public struct IntVector2
@@ -162,23 +162,16 @@ public static class Astar
 
 	private static void ReconstructPath(Dictionary<Node, Node> fromList, Node currentNode, ref List<Node> finalPath)
 	{
-		/*
 		if (fromList.ContainsKey(currentNode))
 		{
 			finalPath.Add(currentNode);
 			ReconstructPath(fromList, fromList[currentNode], ref finalPath);
 		}
 		else
-			finalPath.Add(currentNode);
-		*/
-
-		if (fromList.ContainsKey(currentNode))
 		{
 			finalPath.Add(currentNode);
-			ReconstructPath(fromList, fromList[currentNode], ref finalPath);
-		}
-		else
 			finalPath.Reverse();
+		}
 	}
 
 	private static Node LowestScore(List<Node> nodes, Dictionary<Node, float> scores)

@@ -13,6 +13,9 @@ public class GridController : MonoBehaviour
 	private Tile[,] _tiles;
 	private Tile _currentTile;
 
+	public Unit unitPlayer;
+	public Unit unitEnemy;
+
 	#endregion
 
 	#region Properties
@@ -31,6 +34,9 @@ public class GridController : MonoBehaviour
 	private void Start()
 	{
 		InitGrid();
+
+		_tiles[1, 2].Unit = unitPlayer;
+		_tiles[3, 5].Unit = unitEnemy;
 	}
 
 	private void Update()
@@ -98,7 +104,8 @@ public class GridController : MonoBehaviour
 	{
 		_currentTile = _tiles[coordY, coordX];
 		//_targetFollow.Target = currentTile.Go.transform;
-		_tileSelector.transform.position = _currentTile.Go.transform.position + (Vector3.up * 0.01f);
+		_tileSelector.transform.position = _currentTile.Go.transform.position;
+		UIManager.Instance.DisplayUnitInfo(_currentTile.Unit);
 	}
 
 	private void NavigateToDirection(int dirX, int dirY, bool deepSearch)

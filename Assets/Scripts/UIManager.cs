@@ -4,18 +4,23 @@ using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
-	#region Attributes
+	#region Fields
 
 	public static UIManager Instance;
 
-	public Image unitAvatar;
 	public GameObject unitInfoPanel;
+	public Image unitBackground;
+	public Image unitAvatar;
 	public TextMeshProUGUI unitName;
+	public TextMeshProUGUI unitLevel;
 	public TextMeshProUGUI unitHealth;
+	public TextMeshProUGUI unitMana;
+
+	public SpriteRenderer tileSelectorSprite;
 
 	#endregion
 
-	#region Initialization
+	#region Unity
 
 	private void Awake()
 	{
@@ -24,7 +29,7 @@ public class UIManager : MonoBehaviour
 
 	#endregion
 
-	#region Logic
+	#region Methods
 
 	public void DisplayUnitInfo(Unit unit)
 	{
@@ -32,9 +37,17 @@ public class UIManager : MonoBehaviour
 
 		if (unit != null)
 		{
+			unitBackground.color = unit.color;
 			unitAvatar.sprite = unit.Avatar;
 			unitName.text = unit.Name;
+			unitLevel.text = "Lv " + unit.Level.ToString();
 			unitHealth.text = $"{unit.Health} / {unit.HealthMax}";
+			unitMana.text = $"{unit.Mana} / {unit.ManaMax}";
+			tileSelectorSprite.color = unit.color;
+		}
+		else
+		{
+			tileSelectorSprite.color = Color.black;
 		}
 	}
 
