@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class GridController : MonoBehaviour
 {
-	#region Members
+	#region Fields
 
 	public static GridController Instance;
 
@@ -10,12 +10,14 @@ public class GridController : MonoBehaviour
 	[SerializeField] private TargetFollow _targetFollow;
 	[SerializeField] private GameObject _tileSelector;
 
-	//public Unit unit;
-
-	public Tile[,] Tiles => _tiles;
-
 	private Tile[,] _tiles;
 	private Tile _currentTile;
+
+	#endregion
+
+	#region Properties
+
+	public Tile[,] Tiles => _tiles;
 
 	#endregion
 
@@ -45,7 +47,7 @@ public class GridController : MonoBehaviour
 
 	#endregion
 
-	#region Logic
+	#region Methods
 
 	private void InitGrid()
 	{
@@ -61,7 +63,6 @@ public class GridController : MonoBehaviour
 		}
 
 		SelectTileAtCoords(1, 0);
-		//_tiles[1, 1].Unit = unit;
 	}
 
 	private void SampleGridAtCoords(int indexX, int indexY)
@@ -81,26 +82,6 @@ public class GridController : MonoBehaviour
 			GridPos = new Astar.IntVector2(indexX, indexY),
 			WorldPos = new Vector3(hit.point.x, 0, hit.point.z)
 		};
-
-		/*
-		switch (hit.collider.tag)
-		{
-			case "Ground":
-				newNode.NavigationState = Enums.NavigationState.Walkable;
-				break;
-            case "Start":
-                _astarContext.StartNode = newNode;
-                newNode.NavigationState = Enums.NavigationState.Walkable;
-                break;
-            case "End":
-				_astarContext.EndNode = newNode;
-				newNode.NavigationState = Enums.NavigationState.Walkable;
-                break;
-			default:
-				newNode.NavigationState = Enums.NavigationState.Unwalkable;
-				break;
-		}
-		*/
 
 		Astar.Nodes[indexY, indexX] = newNode;
 

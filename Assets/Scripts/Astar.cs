@@ -26,14 +26,14 @@ public static class Astar
 
 	#endregion
 
-	#region Members
+	#region Fields
 
 	public static Node[,] Nodes { get; set; }
 	public static bool AllowDiagonals { get; set; }
 
 	#endregion
 
-	#region Logic
+	#region Methods
 
 	public static List<Node> FindPath(Node startNode, Node endNode)
 	{
@@ -162,16 +162,26 @@ public static class Astar
 
 	private static void ReconstructPath(Dictionary<Node, Node> fromList, Node currentNode, ref List<Node> finalPath)
 	{
-        if (fromList.ContainsKey(currentNode))
-        {
-            finalPath.Add(currentNode);
-            ReconstructPath(fromList, fromList[currentNode], ref finalPath);
-        }
-        else
-            finalPath.Add(currentNode);
-    }
+		/*
+		if (fromList.ContainsKey(currentNode))
+		{
+			finalPath.Add(currentNode);
+			ReconstructPath(fromList, fromList[currentNode], ref finalPath);
+		}
+		else
+			finalPath.Add(currentNode);
+		*/
 
-    private static Node LowestScore(List<Node> nodes, Dictionary<Node, float> scores)
+		if (fromList.ContainsKey(currentNode))
+		{
+			finalPath.Add(currentNode);
+			ReconstructPath(fromList, fromList[currentNode], ref finalPath);
+		}
+		else
+			finalPath.Reverse();
+	}
+
+	private static Node LowestScore(List<Node> nodes, Dictionary<Node, float> scores)
 	{
 		var index = 0;
 		var lowestScore = float.MaxValue;
