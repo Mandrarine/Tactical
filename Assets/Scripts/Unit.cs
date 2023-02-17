@@ -25,10 +25,13 @@ public class Unit : MonoBehaviour
 
 	#region Fields
 
+	public float jumpSpeed = 1.0f;
 	public float lerpSpeed = 1.0f;
 	public float translateSpeed = 1.0f;
 	public float teleportDelay = 1.0f;
 	public MovementType movementType;
+	public int moveRange = 1;
+	public float jumpHeight = 1;
 	public Color color;
 
 	[SerializeField] private string _name;
@@ -76,6 +79,7 @@ public class Unit : MonoBehaviour
 		StartCoroutine(MoveUnitAlongPathInternal(path));
 	}
 
+	/*
 	private IEnumerator MoveUnitAlongPathInternal(List<Astar.Node> path)
 	{
 		_moving = true;
@@ -112,6 +116,55 @@ public class Unit : MonoBehaviour
 		_moving = false;
 		_animator.SetBool("Move", false);
 	}
+	*/
+
+	private IEnumerator MoveUnitAlongPathInternal(List<Astar.Node> path)
+	{
+		_moving = true;
+
+		Astar.Node currentNode;
+		Astar.Node nextNode;
+		int index = 0;
+
+		transform.position = path[index].WorldPos;
+
+		do
+		{
+			currentNode = path[index];
+			nextNode = path[index + 1];
+
+			transform.LookAt(new Vector3(nextNode.WorldPos.x, currentNode.WorldPos.y, nextNode.WorldPos.z));
+
+			float verticalDifference = Mathf.Abs(currentNode.WorldPos.y - nextNode.WorldPos.y);
+
+			//if (nextNode.WorldPos.y == currentNode.WorldPos.y)
+			if (verticalDifference == 0)
+			{
+				switch (movementType)
+				{
+					case MovementType.Translate:
+						yield return StartCoroutine(TranslateToPosition(nextNode.WorldPos));
+						break;
+					case MovementType.Lerp:
+						yield return StartCoroutine(LerpToPosition(nextNode.WorldPos));
+						break;
+					case MovementType.Teleport:
+						yield return StartCoroutine(TeleportToPosition(nextNode.WorldPos));
+						break;
+					default:
+						yield return StartCoroutine(TranslateToPosition(nextNode.WorldPos));
+						break;
+				}
+			}
+			else
+				yield return StartCoroutine(JumpToPosition(currentNode.WorldPos, nextNode.WorldPos, verticalDifference));
+
+			index++;
+		}
+		while (index < path.Count - 1);
+
+		_moving = false;
+	}
 
 	private IEnumerator TeleportToPosition(Vector3 targetPosition)
 	{
@@ -130,11 +183,46 @@ public class Unit : MonoBehaviour
 
 	private IEnumerator TranslateToPosition(Vector3 targetPosition)
 	{
+		_animator.SetBool("Move", true);
+
 		while (transform.position != targetPosition)
 		{
 			transform.position = Vector3.MoveTowards(transform.position, targetPosition, Time.deltaTime * translateSpeed);
 			yield return null;
 		}
+
+		_animator.SetBool("Move", false);
+	}
+
+	private IEnumerator JumpToPosition(Vector3 originPosition, Vector3 targetPosition, float verticalDifference)
+	{
+		Vector3 verticalOffset = Vector3.up * verticalDifference;
+		Vector3 middlePosition = originPosition + targetPosition;
+
+		float t = 0.0f;
+
+		while (t != 1.0f)
+		{
+			t = Mathf.Clamp01(t += Time.deltaTime * jumpSpeed);
+			transform.position = CubicBezier(originPosition, originPosition + verticalOffset, targetPosition + verticalOffset, targetPosition, t);
+			yield return null;
+		}
+	}
+
+	private Vector3 CubicBezier(Vector3 p0, Vector3 c1, Vector3 c2, Vector3 p3, float t)
+	{
+		float u = 1 - t;
+		float tt = t * t;
+		float uu = u * u;
+		float ttt = tt * t;
+		float uuu = uu * u;
+
+		Vector3 p = uuu * p0;
+		p += 3 * uu * t * c1;
+		p += 3 * u * tt * c2;
+		p += ttt * p3;
+
+		return p;
 	}
 
 	#endregion

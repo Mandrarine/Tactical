@@ -21,6 +21,7 @@ public class GridController : MonoBehaviour
 	#region Properties
 
 	public Tile[,] Tiles => _tiles;
+	public Tile CurrentTile => _currentTile;
 
 	#endregion
 
@@ -35,8 +36,15 @@ public class GridController : MonoBehaviour
 	{
 		InitGrid();
 
-		_tiles[1, 2].Unit = unitPlayer;
-		_tiles[3, 5].Unit = unitEnemy;
+		Tile tilePlayer = _tiles[(int)unitPlayer.transform.position.z, (int)unitPlayer.transform.position.x];
+		Tile tileEnemy = _tiles[(int)unitEnemy.transform.position.z, (int)unitEnemy.transform.position.x];
+
+		tilePlayer.Unit = unitPlayer;
+		tileEnemy.Unit = unitEnemy;
+
+		_currentTile = tilePlayer;
+
+		SelectTileAtCoords(_currentTile.Node.GridPos.X, _currentTile.Node.GridPos.Y);
 	}
 
 	private void Update()
@@ -57,8 +65,8 @@ public class GridController : MonoBehaviour
 
 	private void InitGrid()
 	{
-		_tiles = new Tile[_astarContext.GridHeight, _astarContext.GridWidth];
 		Astar.Nodes = new Astar.Node[_astarContext.GridHeight, _astarContext.GridWidth];
+		_tiles = new Tile[_astarContext.GridHeight, _astarContext.GridWidth];
 
 		for (var y = 0; y < _tiles.GetLength(0); y++)
 		{
@@ -67,8 +75,6 @@ public class GridController : MonoBehaviour
 				SampleGridAtCoords(x, y);
 			}
 		}
-
-		SelectTileAtCoords(1, 0);
 	}
 
 	private void SampleGridAtCoords(int indexX, int indexY)
@@ -80,24 +86,35 @@ public class GridController : MonoBehaviour
 		var lRayOrigin = new Vector3(posX, _astarContext.SamplingHeight, posY);
 		var lRay = new Ray(lRayOrigin, Vector3.down);
 
+		/*
 		if (!Physics.Raycast(lRay, out RaycastHit hit, _astarContext.SamplingHeight + 1))
 			return;
+		*/
 
-		var newNode = new Astar.Node
+		if (Physics.Raycast(lRay, out RaycastHit hit, _astarContext.SamplingHeight + 1))
 		{
-			GridPos = new Astar.IntVector2(indexX, indexY),
-			WorldPos = new Vector3(hit.point.x, 0, hit.point.z)
-		};
+			var newNode = new Astar.Node
+			{
+				GridPos = new Astar.IntVector2(indexX, indexY),
+				//WorldPos = new Vector3(hit.point.x, 0, hit.point.z)
+				WorldPos = hit.point
+			};
 
-		Astar.Nodes[indexY, indexX] = newNode;
+			Astar.Nodes[indexY, indexX] = newNode;
 
-		var newTile = new Tile
+			var newTile = new Tile
+			{
+				Go = hit.collider.gameObject,
+				Node = newNode
+			};
+
+			_tiles[indexY, indexX] = newTile;
+		}
+		else
 		{
-			Go = hit.collider.gameObject,
-			Node = newNode
-		};
-
-		_tiles[indexY, indexX] = newTile;
+			Astar.Nodes[indexY, indexX] = null;
+			_tiles[indexY, indexX] = null;
+		}
 	}
 
 	private void SelectTileAtCoords(int coordX, int coordY)

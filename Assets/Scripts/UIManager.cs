@@ -9,14 +9,18 @@ public class UIManager : MonoBehaviour
 	public static UIManager Instance;
 
 	public GameObject unitInfoPanel;
-	public Image unitBackground;
+	public Image[] unitBackgrounds;
 	public Image unitAvatar;
 	public TextMeshProUGUI unitName;
 	public TextMeshProUGUI unitLevel;
 	public TextMeshProUGUI unitHealth;
 	public TextMeshProUGUI unitMana;
 
-	public SpriteRenderer tileSelectorSprite;
+	public SpriteRenderer tileSelectorSpriteEdge;
+	public SpriteRenderer tileSelectorSpriteMiddle;
+
+	public Color colorTileSelectorEdgeDefault;
+	public Color colorTileSelectorMiddleDefault;
 
 	#endregion
 
@@ -37,17 +41,24 @@ public class UIManager : MonoBehaviour
 
 		if (unit != null)
 		{
-			unitBackground.color = unit.color;
+			foreach (Image image in unitBackgrounds)
+			{
+				image.color = unit.color;
+			}
+
 			unitAvatar.sprite = unit.Avatar;
 			unitName.text = unit.Name;
 			unitLevel.text = "Lv " + unit.Level.ToString();
 			unitHealth.text = $"{unit.Health} / {unit.HealthMax}";
 			unitMana.text = $"{unit.Mana} / {unit.ManaMax}";
-			tileSelectorSprite.color = unit.color;
+
+			tileSelectorSpriteEdge.color = unit.color;
+			tileSelectorSpriteMiddle.color = new Color(unit.color.r, unit.color.g, unit.color.b, 0.5f);
 		}
 		else
 		{
-			tileSelectorSprite.color = Color.black;
+			tileSelectorSpriteEdge.color = colorTileSelectorEdgeDefault;
+			tileSelectorSpriteMiddle.color = colorTileSelectorMiddleDefault;
 		}
 	}
 

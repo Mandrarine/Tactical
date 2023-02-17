@@ -50,7 +50,7 @@ public class AstarContext : MonoBehaviour
 
 	public List<Astar.Node> FindPath(Tile startTile, Tile endTile)
 	{
-		Astar.AllowDiagonals = _allowDiagonals;
+		//Astar.AllowDiagonals = _allowDiagonals;
 
 		return Astar.FindPath(startTile.Node, endTile.Node);
 	}

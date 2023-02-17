@@ -5,7 +5,7 @@ public static class Astar
 {
 	#region Structures
 
-	public struct Node
+	public class Node
 	{
 		public IntVector2 GridPos;
 		public Vector3 WorldPos;
@@ -24,19 +24,29 @@ public static class Astar
 		}
 	}
 
+	/*
+	private static bool Equals(this Node nodeA, Node nodeB)
+	{
+		return (nodeA.GridPos.X == nodeB.GridPos.X) && (nodeB.GridPos.Y == nodeB.GridPos.Y);
+	}
+	*/
+
 	#endregion
 
 	#region Fields
 
 	public static Node[,] Nodes { get; set; }
-	public static bool AllowDiagonals { get; set; }
+	//public static bool AllowDiagonals { get; set; }
 
 	#endregion
 
 	#region Methods
 
-	public static List<Node> FindPath(Node startNode, Node endNode)
+	public static List<Node> FindPath(Node startNode, Node endNode, float jumpHeight = 0)
 	{
+		if (startNode == null || endNode == null)
+			return null;
+
 		var closedSet = new List<Node>();
 		var openSet = new List<Node>();
 		var fromList = new Dictionary<Node, Node>();
@@ -67,11 +77,17 @@ public static class Astar
 
 			foreach (Node neighbour in neighbours)
 			{
-				//if (neighbour.NavigationState == Enums.NavigationState.Unwalkable || closedSet.Contains(neighbour))
-				if (closedSet.Contains(neighbour))
-				{
+				if (neighbour == null)
 					continue;
-				}
+
+				//if (neighbour.NavigationState == Enums.NavigationState.Unwalkable || closedSet.Contains(neighbour))
+
+				if (closedSet.Contains(neighbour))
+					continue;
+
+				float verticalDifference = Mathf.Abs(currentNode.WorldPos.y - neighbour.WorldPos.y);
+				if (verticalDifference > jumpHeight)
+					continue;
 
 				float tentativeGScore = gScores[currentNode] + GetCost(currentNode, neighbour);
 				bool tentativeIsBetter = false;
@@ -94,7 +110,7 @@ public static class Astar
 			}
 		}
 
-		return new List<Node>();
+		return null;
 	}
 
 	private static List<Node> GetNeighbourNodes(Node currentNode)
@@ -118,6 +134,7 @@ public static class Astar
 		if (TryGetNodeAtCoords(coordX - 1, coordY, out node))
 			neighbours.Add(node);
 
+		/*
 		// Diagonals
 		if (!AllowDiagonals)
 			return neighbours;
@@ -134,8 +151,28 @@ public static class Astar
 		// 🡬
 		if (TryGetNodeAtCoords(coordX - 1, coordY + 1, out node))
 			neighbours.Add(node);
+		*/
 
 		return neighbours;
+	}
+
+	public static List<Node> FindPathsInRange(Node originNode, int range, float jumpHeight)
+	{
+		List<Node> nodes = new List<Node>();
+
+		for (var y = 0; y < Nodes.GetLength(0); y++)
+		{
+			for (var x = 0; x < Nodes.GetLength(1); x++)
+			{
+				Node destinationNode = Nodes[y, x];
+
+				var path = FindPath(originNode, destinationNode, jumpHeight);
+				if (path != null && path.Count <= range + 1)
+					nodes.Add(destinationNode);
+			}
+		}
+
+		return nodes;
 	}
 
 	private static bool TryGetNodeAtCoords(int coordX, int coordY, out Node outputNode)

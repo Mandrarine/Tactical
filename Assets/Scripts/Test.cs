@@ -5,13 +5,12 @@ public class Test : MonoBehaviour
 {
 	#region Fields
 
-	public GameObject start;
 	public GameObject end;
 	public Unit unit;
 
-	private Tile _startTile;
 	private Tile _endTile;
 	private List<Astar.Node> _path;
+	private List<Astar.Node> _tilesInRange;
 
 	#endregion
 
@@ -21,12 +20,23 @@ public class Test : MonoBehaviour
 	{
 		if (Input.GetKeyDown(KeyCode.F))
 		{
-			_startTile = GridController.Instance.Tiles[(int)start.transform.position.z, (int)start.transform.position.x];
 			_endTile = GridController.Instance.Tiles[(int)end.transform.position.z, (int)end.transform.position.x];
-			_path = AstarContext.Instance.FindPath(_startTile, _endTile);
 
-			if (_path != null)
-				unit.MoveUnitAlongPath(_path);
+			Tile tile = GridController.Instance.CurrentTile;
+			if (tile.Unit != null)
+			{
+				_path = Astar.FindPath(tile.Node, _endTile.Node, tile.Unit.jumpHeight);
+
+				if (_path != null)
+					unit.MoveUnitAlongPath(_path);
+			}
+		}
+		else if (Input.GetKeyDown(KeyCode.T))
+		{
+			Tile tile = GridController.Instance.CurrentTile;
+
+			if (tile.Unit != null)
+				_tilesInRange = Astar.FindPathsInRange(tile.Node, tile.Unit.moveRange, tile.Unit.jumpHeight);
 		}
 	}
 
@@ -40,12 +50,20 @@ public class Test : MonoBehaviour
 
 	private void OnDrawGizmos()
 	{
-		if (_path == null)
-			return;
-
-		foreach (Astar.Node node in _path)
+		if (_path != null)
 		{
-			DrawGizmoSphere(node, 0.2f, Color.cyan);
+			foreach (Astar.Node node in _path)
+			{
+				DrawGizmoSphere(node, 0.25f, Color.magenta);
+			}
+		}
+
+		if (_tilesInRange != null)
+		{
+			foreach (Astar.Node node in _tilesInRange)
+			{
+				DrawGizmoSphere(node, 0.2f, Color.cyan);
+			}
 		}
 	}
 
