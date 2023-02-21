@@ -1,3 +1,4 @@
+/*
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -18,10 +19,10 @@ public class Test : MonoBehaviour
 	{
 		if (Input.GetKeyDown(KeyCode.M))
 		{
-			Tile playerUnitTile = GridController.Instance.Tiles[(int)unitPlayer.transform.position.z, (int)unitPlayer.transform.position.x];
-			Tile endTile = GridController.Instance.CurrentTile;
+			Tile playerUnitTile = GridManager.Instance.Tiles[(int)unitPlayer.transform.position.z, (int)unitPlayer.transform.position.x];
+			Tile endTile = GridManager.Instance.CurrentTile;
 
-			if (!_moveTiles.Contains(endTile.Node))
+			if ((_moveTiles == null) || (!_moveTiles.Contains(endTile.Node)))
 				return;
 
 			_path = Astar.FindPath(playerUnitTile.Node, endTile.Node, playerUnitTile.Unit.jumpHeight);
@@ -38,7 +39,7 @@ public class Test : MonoBehaviour
 			if (_moveTiles != null)
 				_moveTiles = null;
 
-			Tile tile = GridController.Instance.CurrentTile;
+			Tile tile = GridManager.Instance.CurrentTile;
 
 			if (tile.Unit != null)
 			{
@@ -88,3 +89,4 @@ public class Test : MonoBehaviour
 
 	#endregion
 }
+*/

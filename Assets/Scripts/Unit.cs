@@ -1,18 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Linq;
 
 public class Unit : MonoBehaviour
 {
 	#region Enumerations
-
-	public enum Faction
-	{
-		Player,
-		Ally,
-		Enemy
-	}
 
 	public enum MovementType
 	{
@@ -30,6 +22,7 @@ public class Unit : MonoBehaviour
 	public float translateSpeed = 1.0f;
 	public float teleportDelay = 1.0f;
 	public MovementType movementType;
+	public int attackRange = 1;
 	public int moveRange = 1;
 	public float jumpHeight = 1;
 	public Color color;
@@ -37,7 +30,7 @@ public class Unit : MonoBehaviour
 	[SerializeField] private string _name;
 	[SerializeField] private int _level;
 	[SerializeField] private Sprite _avatar;
-	[SerializeField] private Faction _faction;
+	[SerializeField] private Enums.Faction _faction;
 	[SerializeField] private int _health;
 	[SerializeField] private int _healthMax;
 	[SerializeField] private int _mana;
@@ -50,9 +43,10 @@ public class Unit : MonoBehaviour
 
 	#region Properties
 
-	public Sprite Avatar => _avatar;
 	public string Name => _name;
 	public int Level => _level;
+	public Sprite Avatar => _avatar;
+	public Enums.Faction Faction => _faction;
 	public int Health => _health;
 	public int HealthMax => _healthMax;
 	public int Mana => _mana;
@@ -71,54 +65,7 @@ public class Unit : MonoBehaviour
 
 	#region Methods
 
-	public void MoveUnitAlongPath(List<Astar.Node> path)
-	{
-		if (_moving)
-			return;
-
-		StartCoroutine(MoveUnitAlongPathInternal(path));
-	}
-
-	/*
-	private IEnumerator MoveUnitAlongPathInternal(List<Astar.Node> path)
-	{
-		_moving = true;
-		_animator.SetBool("Move", true);
-
-		Astar.Node node = path.First();
-		transform.position = node.WorldPos;
-		path.Remove(node);
-
-		while (path.Count > 0)
-		{
-			node = path.First();
-			transform.LookAt(node.WorldPos);
-
-			switch (movementType)
-			{
-				case MovementType.Translate:
-					yield return StartCoroutine(TranslateToPosition(node.WorldPos));
-					break;
-				case MovementType.Lerp:
-					yield return StartCoroutine(LerpToPosition(node.WorldPos));
-					break;
-				case MovementType.Teleport:
-					yield return StartCoroutine(TeleportToPosition(node.WorldPos));
-					break;
-				default:
-					yield return StartCoroutine(TranslateToPosition(node.WorldPos));
-					break;
-			}
-
-			path.Remove(node);
-		}
-
-		_moving = false;
-		_animator.SetBool("Move", false);
-	}
-	*/
-
-	private IEnumerator MoveUnitAlongPathInternal(List<Astar.Node> path)
+	public IEnumerator MoveUnitAlongPath(List<Astar.Node> path)
 	{
 		_moving = true;
 
@@ -137,7 +84,6 @@ public class Unit : MonoBehaviour
 
 			float verticalDifference = Mathf.Abs(currentNode.WorldPos.y - nextNode.WorldPos.y);
 
-			//if (nextNode.WorldPos.y == currentNode.WorldPos.y)
 			if (verticalDifference == 0)
 			{
 				switch (movementType)

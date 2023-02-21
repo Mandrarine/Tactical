@@ -1,27 +1,35 @@
+using System.Collections.Generic;
 using UnityEngine;
 
-public class GridController : MonoBehaviour
+public class GridManager : MonoBehaviour
 {
 	#region Fields
 
-	public static GridController Instance;
+	public static GridManager Instance;
 
 	[SerializeField] private AstarContext _astarContext;
 	[SerializeField] private TargetFollow _targetFollow;
-	[SerializeField] private GameObject _tileSelector;
 
+	[SerializeField] private GameObject _tileSelector;
+	public SpriteRenderer tileSelectorSpriteOutline;
+	public SpriteRenderer tileSelectorSpriteMiddle;
+	public Color colorTileSelectorOutlineDefault;
+	public Color colorTileSelectorMiddleDefault;
+
+	private Tile _focusedTile;
 	private Tile[,] _tiles;
-	private Tile _currentTile;
 
 	public Unit unitPlayer;
 	public Unit unitEnemy;
+
+	private bool _tileSelectorLocked;
 
 	#endregion
 
 	#region Properties
 
 	public Tile[,] Tiles => _tiles;
-	public Tile CurrentTile => _currentTile;
+	public Tile FocusedTile => _focusedTile;
 
 	#endregion
 
@@ -42,13 +50,16 @@ public class GridController : MonoBehaviour
 		tilePlayer.Unit = unitPlayer;
 		tileEnemy.Unit = unitEnemy;
 
-		_currentTile = tilePlayer;
+		_focusedTile = tilePlayer;
 
-		SelectTile(_currentTile);
+		SelectTile(_focusedTile);
 	}
 
 	private void Update()
 	{
+		if (_tileSelectorLocked)
+			return;
+
 		if (Input.GetKeyDown(KeyCode.UpArrow))
 			NavigateToDirection(1, 0, true);
 		else if (Input.GetKeyDown(KeyCode.RightArrow))
@@ -62,6 +73,11 @@ public class GridController : MonoBehaviour
 	#endregion
 
 	#region Methods
+
+	public void SetTileSelectorLocked(bool value)
+	{
+		_tileSelectorLocked = value;
+	}
 
 	private void InitGrid()
 	{
@@ -118,16 +134,28 @@ public class GridController : MonoBehaviour
 
 	private void SelectTileAtCoords(int coordX, int coordY)
 	{
-		_currentTile = _tiles[coordY, coordX];
+		_focusedTile = _tiles[coordY, coordX];
 		//_targetFollow.Target = currentTile.Go.transform;
-		_tileSelector.transform.position = _currentTile.Go.transform.position;
-		UIManager.Instance.DisplayUnitInfo(_currentTile.Unit);
+		_tileSelector.transform.position = _focusedTile.Go.transform.position;
+
+		if (_focusedTile.Unit)
+		{
+			tileSelectorSpriteOutline.color = _focusedTile.Unit.color;
+			tileSelectorSpriteMiddle.color = new Color(_focusedTile.Unit.color.r, _focusedTile.Unit.color.g, _focusedTile.Unit.color.b, 0.5f);
+		}
+		else
+		{
+			tileSelectorSpriteOutline.color = colorTileSelectorOutlineDefault;
+			tileSelectorSpriteMiddle.color = colorTileSelectorMiddleDefault;
+		}
+
+		UIManager.Instance.DisplayUnitInfo(_focusedTile.Unit);
 	}
 
 	private void NavigateToDirection(int dirX, int dirY, bool deepSearch)
 	{
-		int coordX = _currentTile.Node.GridPos.X;
-		int coordY = _currentTile.Node.GridPos.Y;
+		int coordX = _focusedTile.Node.GridPos.X;
+		int coordY = _focusedTile.Node.GridPos.Y;
 		Tile tile = default;
 
 		do

@@ -16,11 +16,8 @@ public class UIManager : MonoBehaviour
 	public TextMeshProUGUI unitHealth;
 	public TextMeshProUGUI unitMana;
 
-	public SpriteRenderer tileSelectorSpriteEdge;
-	public SpriteRenderer tileSelectorSpriteMiddle;
-
-	public Color colorTileSelectorEdgeDefault;
-	public Color colorTileSelectorMiddleDefault;
+	public TextMeshProUGUI phaseName;
+	public TextMeshProUGUI phaseTurn;
 
 	#endregion
 
@@ -34,6 +31,12 @@ public class UIManager : MonoBehaviour
 	#endregion
 
 	#region Methods
+
+	public void UpdateCombatInfo()
+	{
+		phaseName.text = CombatManager.Instance.CombatPhase.ToString();
+		phaseTurn.text = $"Turn {CombatManager.Instance.TurnCount.ToString()}";
+	}
 
 	public void DisplayUnitInfo(Unit unit)
 	{
@@ -51,14 +54,6 @@ public class UIManager : MonoBehaviour
 			unitLevel.text = "Lv " + unit.Level.ToString();
 			unitHealth.text = $"{unit.Health} / {unit.HealthMax}";
 			unitMana.text = $"{unit.Mana} / {unit.ManaMax}";
-
-			tileSelectorSpriteEdge.color = unit.color;
-			tileSelectorSpriteMiddle.color = new Color(unit.color.r, unit.color.g, unit.color.b, 0.5f);
-		}
-		else
-		{
-			tileSelectorSpriteEdge.color = colorTileSelectorEdgeDefault;
-			tileSelectorSpriteMiddle.color = colorTileSelectorMiddleDefault;
 		}
 	}
 
