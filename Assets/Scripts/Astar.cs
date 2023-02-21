@@ -156,7 +156,7 @@ public static class Astar
 		return neighbours;
 	}
 
-	public static List<Node> FindPathsInRange(Node originNode, int range, float jumpHeight)
+	public static List<Node> FindNodesInRange(Node originNode, int range, float jumpHeight)
 	{
 		List<Node> nodes = new List<Node>();
 

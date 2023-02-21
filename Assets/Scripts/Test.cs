@@ -5,12 +5,10 @@ public class Test : MonoBehaviour
 {
 	#region Fields
 
-	public GameObject end;
-	public Unit unit;
+	public Unit unitPlayer;
 
-	private Tile _endTile;
 	private List<Astar.Node> _path;
-	private List<Astar.Node> _tilesInRange;
+	private List<Astar.Node> _moveTiles;
 
 	#endregion
 
@@ -18,25 +16,40 @@ public class Test : MonoBehaviour
 
 	private void Update()
 	{
-		if (Input.GetKeyDown(KeyCode.F))
+		if (Input.GetKeyDown(KeyCode.M))
 		{
-			_endTile = GridController.Instance.Tiles[(int)end.transform.position.z, (int)end.transform.position.x];
+			Tile playerUnitTile = GridController.Instance.Tiles[(int)unitPlayer.transform.position.z, (int)unitPlayer.transform.position.x];
+			Tile endTile = GridController.Instance.CurrentTile;
 
-			Tile tile = GridController.Instance.CurrentTile;
-			if (tile.Unit != null)
+			if (!_moveTiles.Contains(endTile.Node))
+				return;
+
+			_path = Astar.FindPath(playerUnitTile.Node, endTile.Node, playerUnitTile.Unit.jumpHeight);
+
+			if (_path != null)
 			{
-				_path = Astar.FindPath(tile.Node, _endTile.Node, tile.Unit.jumpHeight);
-
-				if (_path != null)
-					unit.MoveUnitAlongPath(_path);
+				unitPlayer.MoveUnitAlongPath(_path);
+				playerUnitTile.Unit = null;
+				endTile.Unit = unitPlayer;
 			}
 		}
-		else if (Input.GetKeyDown(KeyCode.T))
+		else if (Input.GetKeyDown(KeyCode.F))
 		{
+			if (_moveTiles != null)
+				_moveTiles = null;
+
 			Tile tile = GridController.Instance.CurrentTile;
 
 			if (tile.Unit != null)
-				_tilesInRange = Astar.FindPathsInRange(tile.Node, tile.Unit.moveRange, tile.Unit.jumpHeight);
+			{
+				_moveTiles = Astar.FindNodesInRange(tile.Node, tile.Unit.moveRange, tile.Unit.jumpHeight);
+				_moveTiles.Remove(tile.Node);
+			}
+		}
+		else if (Input.GetKeyDown(KeyCode.C))
+		{
+			_path = null;
+			_moveTiles = null;
 		}
 	}
 
@@ -58,9 +71,9 @@ public class Test : MonoBehaviour
 			}
 		}
 
-		if (_tilesInRange != null)
+		if (_moveTiles != null)
 		{
-			foreach (Astar.Node node in _tilesInRange)
+			foreach (Astar.Node node in _moveTiles)
 			{
 				DrawGizmoSphere(node, 0.2f, Color.cyan);
 			}

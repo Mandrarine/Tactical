@@ -44,7 +44,7 @@ public class GridController : MonoBehaviour
 
 		_currentTile = tilePlayer;
 
-		SelectTileAtCoords(_currentTile.Node.GridPos.X, _currentTile.Node.GridPos.Y);
+		SelectTile(_currentTile);
 	}
 
 	private void Update()
@@ -86,17 +86,11 @@ public class GridController : MonoBehaviour
 		var lRayOrigin = new Vector3(posX, _astarContext.SamplingHeight, posY);
 		var lRay = new Ray(lRayOrigin, Vector3.down);
 
-		/*
-		if (!Physics.Raycast(lRay, out RaycastHit hit, _astarContext.SamplingHeight + 1))
-			return;
-		*/
-
 		if (Physics.Raycast(lRay, out RaycastHit hit, _astarContext.SamplingHeight + 1))
 		{
 			var newNode = new Astar.Node
 			{
 				GridPos = new Astar.IntVector2(indexX, indexY),
-				//WorldPos = new Vector3(hit.point.x, 0, hit.point.z)
 				WorldPos = hit.point
 			};
 
@@ -115,6 +109,11 @@ public class GridController : MonoBehaviour
 			Astar.Nodes[indexY, indexX] = null;
 			_tiles[indexY, indexX] = null;
 		}
+	}
+
+	private void SelectTile(Tile tile)
+	{
+		SelectTileAtCoords(tile.Node.GridPos.X, tile.Node.GridPos.Y);
 	}
 
 	private void SelectTileAtCoords(int coordX, int coordY)

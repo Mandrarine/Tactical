@@ -157,7 +157,7 @@ public class Unit : MonoBehaviour
 				}
 			}
 			else
-				yield return StartCoroutine(JumpToPosition(currentNode.WorldPos, nextNode.WorldPos, verticalDifference));
+				yield return StartCoroutine(JumpToPosition(currentNode.WorldPos, nextNode.WorldPos));
 
 			index++;
 		}
@@ -183,7 +183,7 @@ public class Unit : MonoBehaviour
 
 	private IEnumerator TranslateToPosition(Vector3 targetPosition)
 	{
-		_animator.SetBool("Move", true);
+		_animator.SetFloat("MoveSpeed", 1);
 
 		while (transform.position != targetPosition)
 		{
@@ -191,22 +191,24 @@ public class Unit : MonoBehaviour
 			yield return null;
 		}
 
-		_animator.SetBool("Move", false);
+		_animator.SetFloat("MoveSpeed", 0);
 	}
 
-	private IEnumerator JumpToPosition(Vector3 originPosition, Vector3 targetPosition, float verticalDifference)
+	private IEnumerator JumpToPosition(Vector3 originPosition, Vector3 targetPosition)
 	{
-		Vector3 verticalOffset = Vector3.up * verticalDifference;
-		Vector3 middlePosition = originPosition + targetPosition;
-
 		float t = 0.0f;
+
+		//_animator.SetBool("Jumping", true);
 
 		while (t != 1.0f)
 		{
 			t = Mathf.Clamp01(t += Time.deltaTime * jumpSpeed);
-			transform.position = CubicBezier(originPosition, originPosition + verticalOffset, targetPosition + verticalOffset, targetPosition, t);
+			//_animator.SetFloat("JumpTime", t);
+			transform.position = CubicBezier(originPosition, originPosition, targetPosition + Vector3.up, targetPosition, t);
 			yield return null;
 		}
+
+		//_animator.SetBool("Jumping", false);
 	}
 
 	private Vector3 CubicBezier(Vector3 p0, Vector3 c1, Vector3 c2, Vector3 p3, float t)
